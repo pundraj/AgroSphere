@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgroSphere 🌍</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+        :root { --bg:#0f172a; --card:#111827; --muted:#9ca3af; --text:#e5e7eb; --accent:#22c55e; }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: linear-gradient(180deg, #0b1220, #0f172a); color: var(--text); }
+        .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+        .title { font-size: 24px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.2px; }
+        .subtitle { color: var(--muted); margin-bottom: 16px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 960px) { .grid { grid-template-columns: 360px 1fr; } }
+        .card { background: rgba(17,24,39,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; backdrop-filter: blur(2px); }
+        .card h2 { font-size: 16px; margin: 0 0 12px 0; font-weight: 600; color: #d1d5db; }
+        .form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form .full { grid-column: span 2; }
+        label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        .unit { color: #a3a3a3; font-size: 11px; }
+        input[type="number"] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: var(--text); outline: none; }
+        input[type="number"]:focus { border-color: rgba(34,197,94,0.7); box-shadow: 0 0 0 3px rgba(34,197,94,0.12); }
+        .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(34,197,94,0.6); background: linear-gradient(180deg, rgba(34,197,94,0.18), rgba(34,197,94,0.10)); color: #bbf7d0; font-weight: 600; cursor: pointer; transition: transform .06s ease, filter .2s; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:active { transform: translateY(1px); }
+        .btn.secondary { color: #cbd5e1; border-color: rgba(148,163,184,0.5); background: linear-gradient(180deg, rgba(148,163,184,0.16), rgba(148,163,184,0.08)); }
+        .btn-row { display:flex; gap:8px; flex-wrap: wrap; align-items: center; }
+        .btn[disabled] { opacity: .7; cursor: not-allowed; }
+        .results { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .result-list { border-collapse: collapse; width: 100%; font-size: 14px; }
+        .result-list th, .result-list td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .result-list th { color: #9ca3af; font-weight: 600; text-align: left; }
+        .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4); color: #86efac; font-weight: 600; font-feature-settings: "tnum" on, "lnum" on; }
+        .error { color: #fecaca; }
+        canvas { background: rgba(255,255,255,0.02); border-radius: 8px; }
+        .muted { color: var(--muted); font-size: 13px; }
+        .summary { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background: rgba(34,197,94,0.10); border:1px solid rgba(34,197,94,0.3); }
+        .tools { display:flex; gap:8px; justify-content:flex-end; }
+  </style>
+</head>
+<body>
+    <div id="bg-blast" class="pixel-blast-container" aria-hidden="true"></div>
+    <div class="container">
+      <div class="title">AgroSphere 🌍</div>
+      <div class="subtitle">Enter inputs, compare model outputs, and visualize them.</div>
+      <div class="grid">
+        <div class="card">
+          <h2>Input Features</h2>
+          <form id="predict-form" class="form">
+            <div>
+              <label for="fertilizer">Fertilizer <span class="unit">kg/acre</span></label>
+              <input id="fertilizer" name="Fertilizer" type="number" step="any" placeholder="e.g. 120" required />
+            </div>
+            <div>
+              <label for="temp">Temp <span class="unit">°C</span></label>
+              <input id="temp" name="Temp" type="number" step="any" placeholder="e.g. 26" required />
+            </div>
+            <div>
+              <label for="n">N</label>
+              <input id="n" name="N" type="number" step="any" placeholder="e.g. 50" required />
+            </div>
+            <div>
+              <label for="p">P</label>
+              <input id="p" name="P" type="number" step="any" placeholder="e.g. 30" required />
+            </div>
+            <div class="full">
+              <label for="k">K</label>
+              <input id="k" name="K" type="number" step="any" placeholder="e.g. 40" required />
+            </div>
+            <div class="full">
+              <div class="btn-row">
+                <button id="predict-btn" type="submit" class="btn">Predict</button>
+                <button id="example-btn" type="button" class="btn secondary">Fill example</button>
+                <button id="reset-btn" type="button" class="btn secondary">Reset</button>
+                <span id="status" class="muted"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Results</h2>
+          <div class="results">
+            <div id="summary" class="summary" style="display:none"></div>
+            <table class="result-list" id="result-table" style="display:none">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Prediction</th>
+                  <th>Accuracy</th>
+                </tr>
+              </thead>
+              <tbody id="result-body"></tbody>
+            </table>
+            <div class="tools" id="chart-tools" style="display:none">
+              <button id="download-btn" class="btn secondary" type="button">Download chart</button>
+              <button id="copy-btn" class="btn secondary" type="button">Copy results</button>
+            </div>
+            <canvas id="chart" height="160" style="display:none"></canvas>
+          </div>
+        </div>
+      </div>
+  </div>
+
+    <script>
+      const form = document.getElementById('predict-form');
+      const statusEl = document.getElementById('status');
+      const predictBtn = document.getElementById('predict-btn');
+      const exampleBtn = document.getElementById('example-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const table = document.getElementById('result-table');
+      const tbody = document.getElementById('result-body');
+      const canvas = document.getElementById('chart');
+      const chartTools = document.getElementById('chart-tools');
+      const downloadBtn = document.getElementById('download-btn');
+      const copyBtn = document.getElementById('copy-btn');
+      const summaryEl = document.getElementById('summary');
+      let chart;
+
+      function toNumberOrNull(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+
+      function setLoading(isLoading) {
+        predictBtn.disabled = isLoading;
+        statusEl.textContent = isLoading ? 'Predicting…' : '';
+      }
+
+      function formatAccuracy(acc) {
+        if (acc == null || acc === '' || Number.isNaN(Number(acc))) return '<span class="muted">—</span>';
+        const n = Number(acc);
+        if (!Number.isFinite(n)) return '<span class="muted">—</span>';
+        const pct = n <= 1 ? (n * 100) : n;
+        return `${pct.toFixed(1)}%`;
+      }
+
+      function renderTable(results) {
+        tbody.innerHTML = '';
+        Object.entries(results).forEach(([name, value]) => {
+          const tr = document.createElement('tr');
+          const tdName = document.createElement('td');
+          tdName.textContent = name;
+          const tdPred = document.createElement('td');
+          const tdAcc = document.createElement('td');
+
+          if (value && typeof value === 'object' && 'error' in value) {
+            tdPred.innerHTML = `<span class="error">${value.error}</span>`;
+            tdAcc.innerHTML = '<span class="muted">—</span>';
+          } else if (value && typeof value === 'object') {
+            tdPred.innerHTML = `<span class="pill">${value.prediction}</span>`;
+            tdAcc.innerHTML = formatAccuracy(value.accuracy);
+          } else if (typeof value === 'number') {
+            tdPred.innerHTML = `<span class="pill">${value}</span>`;
+            tdAcc.innerHTML = '<span class="muted">—</span>';
+          } else if (typeof value === 'string' && value.startsWith('Error')) {
+            tdPred.innerHTML = `<span class="error">${value}</span>`;
+            tdAcc.innerHTML = '<span class="muted">—</span>';
+          } else {
+            tdPred.textContent = String(value);
+            tdAcc.innerHTML = '<span class="muted">—</span>';
+          }
+          tr.appendChild(tdName);
+          tr.appendChild(tdPred);
+          tr.appendChild(tdAcc);
+          tbody.appendChild(tr);
+        });
+        table.style.display = 'table';
+      }
+
+      function renderSummary(results) {
+        const withAcc = Object.entries(results).map(([name, v]) => {
+          let acc = null;
+          if (v && typeof v === 'object' && v.accuracy != null) acc = Number(v.accuracy);
+          if (Number.isFinite(acc)) return [name, acc];
+          return null;
+        }).filter(Boolean);
+        if (withAcc.length === 0) { summaryEl.style.display = 'none'; return; }
+        const [bestName, bestAccRaw] = withAcc.reduce((a,b) => (a[1] >= b[1] ? a : b));
+        const pct = bestAccRaw <= 1 ? (bestAccRaw * 100) : bestAccRaw;
+        summaryEl.innerHTML = `<strong>Most accurate model:</strong> ${bestName} <span class="pill" style="margin-left:6px">${pct.toFixed(1)}%</span>`;
+        summaryEl.style.display = 'flex';
+      }
+
+      function renderChart(results) {
+        const labels = [];
+        const data = [];
+        const bg = [];
+        const border = [];
+        const palette = ['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa','#f472b6','#22d3ee'];
+        let i = 0;
+        for (const [name, value] of Object.entries(results)) {
+          let pred = null;
+          if (value && typeof value === 'object') {
+            if ('prediction' in value && typeof value.prediction === 'number') pred = value.prediction;
+          } else if (typeof value === 'number') {
+            pred = value;
+          }
+          if (typeof pred === 'number') {
+            labels.push(name);
+            data.push(pred);
+            const c = palette[i % palette.length];
+            bg.push(c + '33');
+            border.push(c);
+            i++;
+          }
+        }
+        if (labels.length === 0) { canvas.style.display = 'none'; chartTools.style.display = 'none'; return; }
+        canvas.style.display = 'block';
+        if (chart) { chart.destroy(); }
+        chart = new Chart(canvas, {
+          type: 'bar',
+          data: { labels, datasets: [{ label: 'Prediction', data, backgroundColor: bg, borderColor: border, borderWidth: 1, }], },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#d1d5db' } },
+              tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+            },
+            scales: {
+              x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+              y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+            }
+          }
+        });
+        chartTools.style.display = 'flex';
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const payload = {
+          Fertilizer: toNumberOrNull(form.Fertilizer.value),
+          Temp: toNumberOrNull(form.Temp.value),
+          N: toNumberOrNull(form.N.value),
+          P: toNumberOrNull(form.P.value),
+          K: toNumberOrNull(form.K.value)
+        };
+        try {
+          const res = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const results = await res.json();
+          renderTable(results);
+          renderSummary(results);
+          renderChart(results);
+          localStorage.setItem('lastInputs', JSON.stringify(payload));
+          setLoading(false);
+        } catch (err) {
+          statusEl.textContent = 'Failed to get predictions';
+          setLoading(false);
+        }
+      });
+
+      exampleBtn.addEventListener('click', () => {
+        form.Fertilizer.value = 120;
+        form.Temp.value = 26;
+        form.N.value = 50;
+        form.P.value = 30;
+        form.K.value = 40;
+      });
+
+      resetBtn.addEventListener('click', () => {
+        form.reset();
+        statusEl.textContent = '';
+      });
+
+      downloadBtn.addEventListener('click', () => {
+        if (!chart) return;
+        const link = document.createElement('a');
+        link.href = chart.toBase64Image();
+        link.download = 'model-predictions.png';
+        link.click();
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        const rows = Array.from(tbody.querySelectorAll('tr')).map(tr => {
+          const [nameTd, valTd] = tr.children;
+          const text = valTd.textContent.trim();
+          const num = Number(text);
+          return [nameTd.textContent, Number.isFinite(num) ? num : text];
+        });
+        const obj = Object.fromEntries(rows);
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(obj, null, 2));
+          statusEl.textContent = 'Results copied to clipboard';
+          setTimeout(() => statusEl.textContent = '', 1500);
+        } catch (_) {
+          statusEl.textContent = 'Copy failed';
+          setTimeout(() => statusEl.textContent = '', 1500);
+        }
+      });
+
+      // Load last inputs if available
+      try {
+        const saved = JSON.parse(localStorage.getItem('lastInputs') || 'null');
+        if (saved) {
+          if (saved.Fertilizer != null) form.Fertilizer.value = saved.Fertilizer;
+          if (saved.Temp != null) form.Temp.value = saved.Temp;
+          if (saved.N != null) form.N.value = saved.N;
+          if (saved.P != null) form.P.value = saved.P;
+          if (saved.K != null) form.K.value = saved.K;
+        }
+      } catch (_) {}
+  </script>
+    <link rel="stylesheet" href="/static/pixelblast.css">
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/postprocessing@6.35.3/build/postprocessing.min.js"></script>
+    <script src="/static/pixelblast.js"></script>
+</body>
+</html>
